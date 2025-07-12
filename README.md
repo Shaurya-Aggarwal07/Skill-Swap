@@ -139,8 +139,6 @@ skill-swap-platform/
 ### Environment Variables
 
 Create a `.env` file in the root directory:
-
-```env
 NODE_ENV=development
 PORT=5001
 JWT_SECRET=confidential
