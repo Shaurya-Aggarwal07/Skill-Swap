@@ -1,3 +1,15 @@
+/**
+ * User Routes
+ * 
+ * This module handles user-related endpoints including:
+ * - User browsing and discovery
+ * - User profile management
+ * - Skills management (offered and wanted skills)
+ * - Public profile viewing
+ * 
+ * Routes support authentication, pagination, and filtering
+ */
+
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -7,6 +19,23 @@ const Skill = require('../models/Skill');
 // const auth = require('../middleware/auth');
 const { authenticateToken: auth} = require('../middleware/auth');
 
+/**
+ * GET /users/browse
+ * 
+ * Get all public users for browsing and discovery
+ * Supports pagination, search, location filtering, and skill filtering
+ * 
+ * Query Parameters:
+ * - page: Page number for pagination (default: 1)
+ * - limit: Number of users per page (default: 10)
+ * - search: Search users by name or location
+ * - skill: Filter users by specific skill (offered or wanted)
+ * - location: Filter users by location
+ * 
+ * Response:
+ * - 200: List of public users with their skills and pagination info
+ * - 500: Server error
+ */
 
 // Get all users for browsing (public profiles only)
 router.get('/browse', async (req, res) => {
@@ -128,7 +157,16 @@ router.get('/browse', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
+/**
+ * GET /users/me/skills
+ * 
+ * Get current user's offered and wanted skills
+ * Requires authentication
+ * 
+ * Response:
+ * - 200: User's offered and wanted skills with details
+ * - 500: Server error
+ */
 // Get current user's skills
 router.get('/me/skills', auth, async (req, res) => {
   try {
@@ -164,6 +202,23 @@ router.get('/me/skills', auth, async (req, res) => {
 });
 
 // Add offered skill
+/**
+ * POST /users/me/skills/offered
+ * 
+ * Add a new offered skill to current user's profile
+ * Requires authentication
+ * 
+ * Request Body:
+ * - skillId: ID of the skill to add
+ * - description: Optional description of the skill
+ * - proficiencyLevel: Proficiency level (default: 'intermediate')
+ * 
+ * Response:
+ * - 201: Offered skill added successfully
+ * - 400: Skill already exists or validation error
+ * - 404: Skill not found
+ * - 500: Server error
+ */
 router.post('/me/skills/offered', auth, async (req, res) => {
   try {
     const { skillId, description, proficiencyLevel } = req.body;
@@ -200,6 +255,23 @@ router.post('/me/skills/offered', auth, async (req, res) => {
   }
 });
 
+/**
+ * POST /users/me/skills/wanted
+ * 
+ * Add a new wanted skill to current user's profile
+ * Requires authentication
+ * 
+ * Request Body:
+ * - skillId: ID of the skill to add
+ * - description: Optional description of the skill
+ * - priorityLevel: Priority level (default: 'medium')
+ * 
+ * Response:
+ * - 201: Wanted skill added successfully
+ * - 400: Skill already exists or validation error
+ * - 404: Skill not found
+ * - 500: Server error
+ */
 // Add wanted skill
 router.post('/me/skills/wanted', auth, async (req, res) => {
   try {
@@ -258,6 +330,21 @@ router.delete('/me/skills/offered/:skillId', auth, async (req, res) => {
   }
 });
 
+
+/**
+ * DELETE /users/me/skills/offered/:skillId
+ * 
+ * Remove an offered skill from current user's profile
+ * Requires authentication
+ * 
+ * URL Parameters:
+ * - skillId: ID of the offered skill to remove
+ * 
+ * Response:
+ * - 200: Offered skill removed successfully
+ * - 404: Offered skill not found
+ * - 500: Server error
+ */
 // Remove wanted skill
 router.delete('/me/skills/wanted/:skillId', auth, async (req, res) => {
   try {
@@ -279,6 +366,37 @@ router.delete('/me/skills/wanted/:skillId', auth, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /users/me/skills/wanted/:skillId
+ * 
+ * Remove a wanted skill from current user's profile
+ * Requires authentication
+ * 
+ * URL Parameters:
+ * - skillId: ID of the wanted skill to remove
+ * 
+ * Response:
+ * - 200: Wanted skill removed successfully
+ * - 404: Wanted skill not found
+ * - 500: Server error
+ */
+
+/**
+ * GET /users/:id
+ * 
+ * Get a specific user's public profile by ID
+ * Only returns data for public profiles
+ * 
+ * URL Parameters:
+ * - id: User ID to fetch
+ * 
+ * Response:
+ * - 200: User profile with skills data
+ * - 404: User not found or profile not public
+ * - 500: Server error
+ * 
+ * Note: This route must come AFTER all /me routes to avoid conflicts
+ */
 // Get user profile by ID (public) - This must come AFTER all /me routes
 router.get('/:id', async (req, res) => {
   try {
