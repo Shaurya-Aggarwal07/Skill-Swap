@@ -33,7 +33,7 @@ A comprehensive web application that enables users to list their skills and requ
 ### Backend
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
-- **SQLite** - Database
+- **MongoDB** - Database
 - **JWT** - Authentication
 - **bcryptjs** - Password hashing
 - **multer** - File uploads
