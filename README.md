@@ -75,8 +75,12 @@ A comprehensive web application that enables users to list their skills and requ
 
 3. **Start the application**
    ```bash
-   # Start both backend and frontend
+   # Start frontend
    npm run dev
+   
+   # Start backend
+   cd server
+   npm run server
    ```
 
    Or use the provided scripts:
