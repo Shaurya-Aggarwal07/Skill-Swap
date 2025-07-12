@@ -69,6 +69,16 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    try {
+      await axios.delete(`/api/admin/users/${userId}`);
+      fetchAdminData(); // Refresh the user list
+    } catch (error) {
+      alert('Failed to delete user');
+    }
+  };
+
   const downloadUserReport = async () => {
     try {
       const response = await axios.get('/api/admin/reports/user-activity', {
@@ -240,9 +250,16 @@ const AdminDashboard = () => {
                   <Button
                     variant={user.is_banned ? 'primary' : 'danger'}
                     size="sm"
-                    onClick={() => banUser(user.id, !user.is_banned)}
+                    onClick={() => banUser(user._id, !user.is_banned)}
                   >
                     {user.is_banned ? 'Unban' : 'Ban'}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDeleteUser(user._id)}
+                  >
+                    Delete
                   </Button>
                 </div>
               </div>

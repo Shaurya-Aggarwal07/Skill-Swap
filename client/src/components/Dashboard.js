@@ -11,7 +11,7 @@ import {
 import LoadingSpinner from './common/LoadingSpinner';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [recentSwaps, setRecentSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -93,8 +93,6 @@ const Dashboard = () => {
           </Link>
         ))}
       </div>
-
-     
 
       {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

@@ -21,6 +21,11 @@ const BrowseUsers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  // Active filter states (used for API calls)
+  const [activeSearchTerm, setActiveSearchTerm] = useState('');
+  const [activeSkillFilter, setActiveSkillFilter] = useState('');
+  const [activeLocationFilter, setActiveLocationFilter] = useState('');
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -28,9 +33,9 @@ const BrowseUsers = () => {
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
-        search: searchTerm,
-        skill: skillFilter,
-        location: locationFilter
+        search: activeSearchTerm,
+        skill: activeSkillFilter,
+        location: activeLocationFilter
       });
 
       const response = await axios.get(`/api/users/browse?${params}`);
@@ -43,14 +48,19 @@ const BrowseUsers = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, skillFilter, locationFilter]);
+  }, [currentPage, activeSearchTerm, activeSkillFilter, activeLocationFilter]);
 
+  // Fetch users when active filters or page changes
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    // Update active filters with current input values
+    setActiveSearchTerm(searchTerm);
+    setActiveSkillFilter(skillFilter);
+    setActiveLocationFilter(locationFilter);
     setCurrentPage(1);
   };
 
@@ -58,6 +68,9 @@ const BrowseUsers = () => {
     setSearchTerm('');
     setSkillFilter('');
     setLocationFilter('');
+    setActiveSearchTerm('');
+    setActiveSkillFilter('');
+    setActiveLocationFilter('');
     setCurrentPage(1);
   };
 

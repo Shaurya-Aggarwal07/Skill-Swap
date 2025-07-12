@@ -1,26 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Info, CheckCircle, XCircle, X } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminMessageBanner = () => {
+  const { isAdmin } = useAuth();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchActiveMessages = async () => {
+      try {
+        const response = await axios.get('/api/admin/messages?active=true');
+        setMessages(response.data.messages || []);
+      } catch (error) {
+        console.error('Failed to fetch admin messages:', error);
+        setMessages([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchActiveMessages();
   }, []);
 
-  const fetchActiveMessages = async () => {
-    try {
-      const response = await axios.get('/api/admin/messages?active=true');
-      setMessages(response.data.messages || []);
-    } catch (error) {
-      console.error('Failed to fetch admin messages:', error);
-      setMessages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (isAdmin) {
+    return null;
+  }
 
   const dismissMessage = (messageId) => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));

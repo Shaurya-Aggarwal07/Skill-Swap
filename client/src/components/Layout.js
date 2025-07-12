@@ -25,12 +25,12 @@ const Layout = () => {
   // Create navigation items with a property to indicate which ones should open in a new tab
   const navigation = isAuthenticated ? [
     { name: 'Dashboard', href: '/dashboard', icon: Home, newTab: false },
-    { name: 'Browse Users', href: `${baseUrl}/browse`, icon: Users, newTab: true }, // Use absolute URL and open in new tab
+    { name: 'Browse Users', href: '/browse', icon: Users, newTab: false }, // Use absolute URL and open in new tab
     { name: 'My Profile', href: '/profile', icon: User, newTab: false },
     { name: 'Swap Requests', href: '/swaps', icon: MessageSquare, newTab: false },
     ...(isAdmin ? [{ name: 'Admin Panel', href: '/admin', icon: Shield, newTab: false }] : []),
   ] : [
-    { name: 'Browse Users', href: `${baseUrl}/browse`, icon: Users, newTab: true }, // Use absolute URL and open in new tab
+    { name: 'Browse Users', href: '/browse', icon: Users, newTab: false }, // Use absolute URL and open in new tab
     { name: 'Log In', href: '/login', icon: User, newTab: false },
     { name: 'Sign Up', href: '/register', icon: User, newTab: false },
   ];
@@ -186,11 +186,6 @@ const Layout = () => {
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
-              {isAuthenticated && isAdmin && (
-                <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
-                  Admin
-                </span>
-              )}
               {!isAuthenticated && (
                 <div className="flex items-center space-x-4">
                   <Link to="/login" className="text-gray-600 hover:text-gray-900">Log In</Link>

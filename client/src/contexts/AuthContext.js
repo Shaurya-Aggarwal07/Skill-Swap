@@ -58,7 +58,10 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken);
       setUser(userData);
       
-      toast.success('Login successful!');
+      // Don't show welcome toast for admin users
+      if (!userData.is_admin) {
+        toast.success('Login successful!');
+      }
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.error || 'Login failed';
