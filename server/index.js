@@ -4,11 +4,11 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const skillRoutes = require('./routes/skills');
-const swapRoutes = require('./routes/swaps');
-const adminRoutes = require('./routes/admin');
+const authRoutes = require('../routes/auth');
+const userRoutes = require('../routes/users');
+const skillRoutes = require('../routes/skills');
+const swapRoutes = require('/../routes/swaps');
+const adminRoutes = require('../routes/admin');
 
 // Import database connection and initialization
 const { connectDB, initializeDatabase } = require('./database/init');
