@@ -1,3 +1,13 @@
+/**
+ * Authentication Routes
+ * 
+ * This module handles all authentication-related endpoints including:
+ * - User registration
+ * - User login
+ * - Profile management
+ * - Password changes
+ * - File uploads for profile photos
+ */
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -8,6 +18,15 @@ const path = require('path');
 
 const router = express.Router();
 
+/**
+ * Multer Configuration for File Uploads
+ * 
+ * Configures multer middleware to handle profile photo uploads:
+ * - Storage: Saves files to server/uploads/ directory
+ * - File naming: Uses timestamp + random number for unique filenames
+ * - File size limit: 5MB maximum
+ * - File type: Only allows image files (jpg, png, gif, etc.)
+ */
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -18,7 +37,23 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
-
+/**
+ * POST /auth/register
+ * 
+ * Register a new user account
+ * 
+ * Request Body:
+ * - email: User's email address
+ * - password: User's password (optional for testing)
+ * - name: User's display name
+ * - location: User's location
+ * - availability: User's availability status
+ * 
+ * Response:
+ * - 201: User registered successfully with JWT token
+ * - 400: User already exists
+ * - 500: Server error
+ */
 const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -77,6 +112,21 @@ router.post('/register', async (req, res) => {
   }
 });
 
+/**
+ * POST /auth/login
+ * 
+ * Authenticate user and provide access token
+ * 
+ * Request Body:
+ * - email: User's email address
+ * - password: User's password
+ * 
+ * Response:
+ * - 200: Login successful with JWT token and user data
+ * - 401: Invalid credentials
+ * - 403: Account banned
+ * - 500: Server error
+ */
 // Login user (no validation for testing)
 router.post('/login', async (req, res) => {
   try {
@@ -128,7 +178,17 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-
+/**
+ * GET /auth/profile
+ * 
+ * Get current user's profile information
+ * Requires authentication token
+ * 
+ * Response:
+ * - 200: User profile data (excluding password)
+ * - 404: User not found
+ * - 500: Database error
+ */
 // Get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
@@ -144,6 +204,26 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * PUT /auth/profile
+ * 
+ * Update current user's profile information
+ * Requires authentication token
+ * Supports file upload for profile photo
+ * 
+ * Request Body (all optional):
+ * - name: User's display name
+ * - location: User's location
+ * - availability: User's availability status
+ * - is_public: Whether profile is public
+ * - profile_photo: Image file upload
+ * 
+ * Response:
+ * - 200: Profile updated successfully
+ * - 400: No fields to update
+ * - 404: User not found
+ * - 500: Server error
+ */
 // Update user profile (no validation for testing)
 router.put('/profile', authenticateToken, upload.single('profile_photo'), async (req, res) => {
   try {
@@ -181,7 +261,22 @@ router.put('/profile', authenticateToken, upload.single('profile_photo'), async 
     res.status(500).json({ error: 'Server error' });
   }
 });
-
+/**
+ * PUT /auth/change-password
+ * 
+ * Change user's password
+ * Requires authentication token
+ * 
+ * Request Body:
+ * - currentPassword: Current password for verification
+ * - newPassword: New password to set
+ * 
+ * Response:
+ * - 200: Password changed successfully
+ * - 400: Current password is incorrect
+ * - 404: User not found
+ * - 500: Server error
+ */
 // Change password
 router.put('/change-password', authenticateToken, async (req, res) => {
   try {
