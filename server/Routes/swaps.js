@@ -1,38 +1,13 @@
-/**
- * Swap Routes
- * 
- * This module handles all swap request-related endpoints including:
- * - Creating swap requests between users
- * - Managing swap request status (accept, reject, cancel)
- * - Viewing user's swap requests (sent and received)
- * - Rating completed swaps
- * 
- * All routes require authentication and check for banned users
- */const express = require('express');
+const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticateToken, checkNotBanned } = require('../middleware/auth');
-const { SwapRequest, User, UserSkillOffered } = require('../database/init');
+const SwapRequest = require('../models/SwapRequest');
+const User = require('../models/User');
+const UserSkillOffered = require('../models/UserOfferedSkill');
+const Rating = require('../models/Rating');
 
 const router = express.Router();
-/**
- * POST /swaps
- * 
- * Create a new swap request between two users
- * Requires authentication and user not banned
- * 
- * Request Body:
- * - recipientId: ID of the user to request a swap from
- * - offeredSkillId: ID of the skill the requester is offering
- * - requestedSkillId: ID of the skill the requester wants
- * - message: Optional message to accompany the request
- * 
- * Response:
- * - 201: Swap request created successfully
- * - 400: Invalid request (self-swap, missing skills, duplicate request)
- * - 403: Recipient is banned
- * - 404: Recipient not found
- * - 500: Server error
- */
+
 // Create a new swap request
 router.post('/', authenticateToken, checkNotBanned, [
   body('recipientId').isMongoId(),
@@ -113,25 +88,12 @@ router.post('/', authenticateToken, checkNotBanned, [
   }
 });
 
-/**
- * GET /swaps/my-requests
- * 
- * Get current user's swap requests (both sent and received)
- * Requires authentication and user not banned
- * 
- * Query Parameters:
- * - status: Filter by request status (pending, accepted, rejected, cancelled)
- * - type: Filter by request type ('sent', 'received', 'all' - default: 'all')
- * 
- * Response:
- * - 200: List of swap requests with user and skill details
- * - 500: Database error
- */
 // Get user's swap requests (sent and received)
 router.get('/my-requests', authenticateToken, checkNotBanned, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { status, type = 'all' } = req.query;
+    const { status, type = 'all', page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
 
     let query = {
       $or: [
@@ -150,13 +112,18 @@ router.get('/my-requests', authenticateToken, checkNotBanned, async (req, res) =
       query.status = status;
     }
 
-    const requests = await SwapRequest.find(query)
-      .populate('requester_id', 'name')
-      .populate('recipient_id', 'name')
-      .populate('offered_skill_id', 'name')
-      .populate('requested_skill_id', 'name')
-      .sort({ created_at: -1 })
-      .lean();
+    const [requests, total] = await Promise.all([
+      SwapRequest.find(query)
+        .populate('requester_id', 'name')
+        .populate('recipient_id', 'name')
+        .populate('offered_skill_id', 'name')
+        .populate('requested_skill_id', 'name')
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      SwapRequest.countDocuments(query)
+    ]);
 
     // Transform the data to match expected format
     const transformedRequests = requests.map(req => ({
@@ -173,30 +140,21 @@ router.get('/my-requests', authenticateToken, checkNotBanned, async (req, res) =
       requested_skill_name: req.requested_skill_id.name
     }));
 
-    res.json({ requests: transformedRequests });
+    res.json({ 
+      requests: transformedRequests,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Get swap requests error:', error);
     res.status(500).json({ error: 'Database error' });
   }
 });
 
-/**
- * PUT /swaps/:swapId/accept
- * 
- * Accept a pending swap request
- * Only the recipient can accept a swap request
- * Requires authentication and user not banned
- * 
- * URL Parameters:
- * - swapId: ID of the swap request to accept
- * 
- * Response:
- * - 200: Swap request accepted successfully
- * - 400: Can only accept pending requests
- * - 403: Only recipient can accept requests
- * - 404: Swap request not found
- * - 500: Server error
- */
 // Accept a swap request
 router.put('/:swapId/accept', authenticateToken, checkNotBanned, async (req, res) => {
   try {
@@ -226,20 +184,6 @@ router.put('/:swapId/accept', authenticateToken, checkNotBanned, async (req, res
   }
 });
 
-/**
- * GET /swaps/my-requests
- * 
- * Get current user's swap requests (both sent and received)
- * Requires authentication and user not banned
- * 
- * Query Parameters:
- * - status: Filter by request status (pending, accepted, rejected, cancelled)
- * - type: Filter by request type ('sent', 'received', 'all' - default: 'all')
- * 
- * Response:
- * - 200: List of swap requests with user and skill details
- * - 500: Database error
- */
 // Reject a swap request
 router.put('/:swapId/reject', authenticateToken, checkNotBanned, async (req, res) => {
   try {
@@ -269,25 +213,8 @@ router.put('/:swapId/reject', authenticateToken, checkNotBanned, async (req, res
   }
 });
 
-/**
- * PUT /swaps/:swapId/reject
- * 
- * Reject a pending swap request
- * Only the recipient can reject a swap request
- * Requires authentication and user not banned
- * 
- * URL Parameters:
- * - swapId: ID of the swap request to reject
- * 
- * Response:
- * - 200: Swap request rejected successfully
- * - 400: Can only reject pending requests
- * - 403: Only recipient can reject requests
- * - 404: Swap request not found
- * - 500: Server error
- */
 // Cancel a swap request
-router.put('/:swapId/cancel', authenticateToken, checkNotBanned, async (req, res) => {
+router.delete('/:swapId', authenticateToken, checkNotBanned, async (req, res) => {
   try {
     const { swapId } = req.params;
     const userId = req.user.id;
@@ -305,8 +232,7 @@ router.put('/:swapId/cancel', authenticateToken, checkNotBanned, async (req, res
       return res.status(400).json({ error: 'Can only cancel pending requests' });
     }
 
-    swap.status = 'cancelled';
-    await swap.save();
+    await SwapRequest.findByIdAndDelete(swapId);
 
     res.json({ message: 'Swap request cancelled successfully' });
   } catch (error) {

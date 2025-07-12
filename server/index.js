@@ -1,24 +1,34 @@
+require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cors = require('cors');
 const path = require('path');
 
 // Import routes
-const authRoutes = require('../routes/auth');
-const userRoutes = require('../routes/users');
-const skillRoutes = require('../routes/skills');
-const swapRoutes = require('/../routes/swaps');
-const adminRoutes = require('../routes/admin');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const skillRoutes = require('./routes/skills');
+const swapRoutes = require('./routes/swaps');
+const adminRoutes = require('./routes/admin');
 
 // Import database connection and initialization
 const { connectDB, initializeDatabase } = require('./database/init');
 
 const app = express();
 app.set('trust proxy', 1); // Fix for express-rate-limit and proxy issues
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Security middleware
 app.use(helmet());
+
+// CORS middleware
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://yourdomain.com'] 
+    : ['http://localhost:3000'],
+  credentials: true
+}));
 
 // Rate limiting
 const limiter = rateLimit({
