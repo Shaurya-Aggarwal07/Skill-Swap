@@ -1,3 +1,16 @@
+/**
+ * Admin Routes
+ * 
+ * This module handles all admin-specific endpoints including:
+ * - User management (view, ban/unban users)
+ * - Platform statistics and analytics
+ * - Swap request management
+ * - Admin message system
+ * - Report generation (CSV downloads)
+ * 
+ * All routes require admin authentication and authorization
+ */
+
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
@@ -5,9 +18,32 @@ const { User, SwapRequest, AdminMessage, Rating } = require('../database/init');
 
 const router = express.Router();
 
+/**
+ * Admin Middleware
+ * 
+ * Apply authentication and admin authorization to all routes in this module
+ * - authenticateToken: Verifies JWT token and adds user to req.user
+ * - requireAdmin: Ensures user has admin privileges
+ */
 // Apply admin middleware to all routes
 router.use(authenticateToken, requireAdmin);
 
+/**
+ * GET /admin/users
+ * 
+ * Get all users for admin management view
+ * Supports pagination, search, and status filtering
+ * 
+ * Query Parameters:
+ * - search: Search users by name, email, or location
+ * - status: Filter by 'banned' or 'active' users
+ * - page: Page number for pagination (default: 1)
+ * - limit: Number of users per page (default: 20)
+ * 
+ * Response:
+ * - 200: List of users with pagination info
+ * - 500: Database error
+ */
 // Get all users (admin view)
 router.get('/users', async (req, res) => {
   try {
@@ -54,6 +90,23 @@ router.get('/users', async (req, res) => {
   }
 });
 
+/**
+ * PUT /admin/users/:userId/ban
+ * 
+ * Ban or unban a user account
+ * 
+ * URL Parameters:
+ * - userId: ID of the user to ban/unban
+ * 
+ * Request Body:
+ * - isBanned: Boolean indicating ban status
+ * 
+ * Response:
+ * - 200: User banned/unbanned successfully
+ * - 400: Cannot ban yourself or validation error
+ * - 404: User not found
+ * - 500: Server error
+ */
 // Ban/Unban user
 router.put('/users/:userId/ban', [
   body('isBanned').isBoolean()
@@ -88,7 +141,15 @@ router.put('/users/:userId/ban', [
     res.status(500).json({ error: 'Server error' });
   }
 });
-
+/**
+ * GET /admin/stats
+ * 
+ * Get platform-wide statistics and analytics
+ * 
+ * Response:
+ * - 200: Platform statistics including user counts, swap stats, ratings
+ * - 500: Database error
+ */
 // Get platform statistics
 router.get('/stats', async (req, res) => {
   try {
@@ -124,6 +185,21 @@ router.get('/stats', async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 });
+/**
+ * GET /admin/swaps
+ * 
+ * Get all swap requests for admin management
+ * Supports pagination and status filtering
+ * 
+ * Query Parameters:
+ * - status: Filter by swap status (pending, accepted, rejected, cancelled)
+ * - page: Page number for pagination (default: 1)
+ * - limit: Number of swaps per page (default: 20)
+ * 
+ * Response:
+ * - 200: List of swap requests with pagination info
+ * - 500: Database error
+ */
 
 // Get swap requests (admin view)
 router.get('/swaps', async (req, res) => {
