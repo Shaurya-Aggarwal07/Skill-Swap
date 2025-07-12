@@ -136,25 +136,21 @@ skill-swap-platform/
 ### Available Scripts
 
 ```bash
-# Install all dependencies
-npm run install-all
-
-# Start development servers (backend + frontend)
-npm run dev
-
-# Start backend only
-npm run server
-
-
 ### Environment Variables
 
 Create a `.env` file in the root directory:
 
 ```env
 NODE_ENV=development
-PORT=5000
+PORT=5001
 JWT_SECRET=confidential
 MONGODB_URI=confidential
+
+Create a `.env` file in server folder:
+PORT=5001
+JWT_SECRET=confidential
+MONGODB_URI=confidential
+
 ```
 
 ## Security Features
