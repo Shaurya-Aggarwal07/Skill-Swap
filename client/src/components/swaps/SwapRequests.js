@@ -20,11 +20,14 @@ const SwapRequests = () => {
     setError('');
     try {
       const res = await axios.get(`/api/swaps/my-requests?page=${pageNum}&limit=${PAGE_SIZE}`);
-      setRequests(res.data.requests);
+      setRequests(res.data.requests || []);
       setTotalPages(res.data.pagination?.pages || 1);
       setPage(pageNum);
     } catch (err) {
+      console.error('Failed to load swap requests:', err);
       setError('Failed to load swap requests');
+      setRequests([]);
+      setTotalPages(1);
     }
     setLoading(false);
   };
@@ -70,7 +73,7 @@ const SwapRequests = () => {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium text-gray-900">
-                      {req.requester_id === user.id
+                      {req.requester_id === user.id || req.requester_id === user._id
                         ? `You → ${req.recipient_name}`
                         : `${req.requester_name} → You`}
                     </span>
@@ -84,6 +87,7 @@ const SwapRequests = () => {
                       {req.status}
                     </span>
                   </div>
+
                   <div className="text-sm text-gray-600 mt-1">
                     {req.offered_skill_name} ↔ {req.requested_skill_name}
                   </div>
@@ -95,7 +99,7 @@ const SwapRequests = () => {
                   )}
                 </div>
                 <div className="flex gap-2 mt-2 md:mt-0 md:ml-4">
-                  {req.status === 'pending' && req.recipient_id === user.id && (
+                  {req.status === 'pending' && (req.recipient_id === user.id || req.recipient_id === user._id) && (
                     <>
                       <Button
                         variant="primary"
@@ -111,7 +115,7 @@ const SwapRequests = () => {
                       >Reject</Button>
                     </>
                   )}
-                  {req.status === 'pending' && req.requester_id === user.id && (
+                  {req.status === 'pending' && (req.requester_id === user.id || req.requester_id === user._id) && (
                     <Button
                       variant="secondary"
                       size="sm"

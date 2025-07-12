@@ -6,7 +6,6 @@ import {
   Users,
   User,
   MessageSquare,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -113,13 +112,13 @@ const Layout = () => {
                 <div className="flex-shrink-0">
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
                     <span className="text-sm font-medium text-white">
-                      {user?.name?.charAt(0)?.toUpperCase()}
+                      {(user?.name || 'U')?.charAt(0)?.toUpperCase()}
                     </span>
                   </div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-sm font-medium text-gray-700">{user?.name || 'Unknown User'}</p>
+                  <p className="text-xs text-gray-500">{user?.email || 'No email'}</p>
                 </div>
               </div>
               <button
@@ -153,13 +152,13 @@ const Layout = () => {
                 <div className="flex-shrink-0">
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
                     <span className="text-sm font-medium text-white">
-                      {user?.name?.charAt(0)?.toUpperCase()}
+                      {(user?.name || 'U')?.charAt(0)?.toUpperCase()}
                     </span>
                   </div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-sm font-medium text-gray-700">{user?.name || 'Unknown User'}</p>
+                  <p className="text-xs text-gray-500">{user?.email || 'No email'}</p>
                 </div>
               </div>
               <button

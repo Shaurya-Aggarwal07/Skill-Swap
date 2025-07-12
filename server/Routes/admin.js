@@ -1,11 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const User = require('../models/User');
-const SwapRequest = require('../models/SwapRequest');
-const AdminMessage = require('../models/AdminMessage');
-const Rating = require('../models/Rating');
-const Skill = require('../models/Skill');
+const { User, SwapRequest, AdminMessage, Rating, Skill } = require('../database/init');
 
 const router = express.Router();
 

@@ -13,9 +13,10 @@ const AdminMessageBanner = () => {
   const fetchActiveMessages = async () => {
     try {
       const response = await axios.get('/api/admin/messages?active=true');
-      setMessages(response.data.messages);
+      setMessages(response.data.messages || []);
     } catch (error) {
       console.error('Failed to fetch admin messages:', error);
+      setMessages([]);
     } finally {
       setLoading(false);
     }

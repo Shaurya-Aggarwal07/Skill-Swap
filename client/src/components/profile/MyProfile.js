@@ -6,7 +6,7 @@ import SkillsManager from './SkillsManager';
 import axios from 'axios';
 
 const MyProfile = () => {
-  const { user, updateProfile } = useAuth();
+  const { updateProfile, isAuthenticated, user: currentUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -16,6 +16,12 @@ const MyProfile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!isAuthenticated) {
+        setError('Please log in to view your profile');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError('');
       try {
@@ -23,12 +29,17 @@ const MyProfile = () => {
         setProfile(res.data.user);
         setForm(res.data.user);
       } catch (err) {
-        setError('Failed to load profile');
+        console.error('Failed to load profile:', err);
+        if (err.response?.status === 401) {
+          setError('Please log in to view your profile');
+        } else {
+          setError('Failed to load profile');
+        }
       }
       setLoading(false);
     };
     fetchProfile();
-  }, []);
+  }, [isAuthenticated, currentUser]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -55,6 +66,15 @@ const MyProfile = () => {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-600 mb-4">Please log in to view your profile</div>
+        <a href="/login" className="text-blue-600 hover:text-blue-800">Go to Login</a>
+      </div>
+    );
+  }
+
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (error) return <div className="text-center text-red-600 py-12">{error}</div>;
   if (!profile) return null;
@@ -76,7 +96,7 @@ const MyProfile = () => {
               <img src={profile.profile_photo} alt="Profile" className="h-20 w-20 rounded-full object-cover border" />
             ) : (
               <div className="h-20 w-20 rounded-full bg-primary-600 flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">{profile.name?.charAt(0)?.toUpperCase()}</span>
+                <span className="text-2xl font-bold text-white">{(profile.name || 'U')?.charAt(0)?.toUpperCase()}</span>
               </div>
             )}
             {editMode && (

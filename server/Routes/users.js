@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
-const UserSkillOffered = require('../models/UserOfferedSkill');
-const UserSkillWanted = require('../models/UserWantedSkill');
-const Skill = require('../models/Skill');
+const { User, UserOfferedSkill, UserWantedSkill, Skill } = require('../database/init');
 const { authenticateToken: auth} = require('../middleware/auth');
 
 
@@ -29,11 +26,11 @@ router.get('/browse', async (req, res) => {
     }
 
     // Get users with basic info
-    const users = await User.find(query)
-      .select('name email location availability profile_photo is_public')
+    const users = (await User.find(query)
+      .select('_id name email location availability profile_photo is_public')
       .skip(skip)
       .limit(parseInt(limit))
-      .lean();
+      .lean()).filter(user => user._id); // Ensure only users with valid IDs
 
     // Get total count for pagination
     const total = await User.countDocuments(query);
@@ -45,17 +42,17 @@ router.get('/browse', async (req, res) => {
       
       // Get users with matching offered or wanted skills
       const [offeredSkillUsers, wantedSkillUsers] = await Promise.all([
-        UserSkillOffered.find({}).populate({
+        UserOfferedSkill.find({}).populate({
           path: 'user_id',
-          select: 'name email location availability profile_photo is_public',
+          select: '_id name email location availability profile_photo is_public',
           match: { is_public: true }
         }).populate({
           path: 'skill_id',
           match: { name: skillRegex }
         }),
-        UserSkillWanted.find({}).populate({
+        UserWantedSkill.find({}).populate({
           path: 'user_id',
-          select: 'name email location availability profile_photo is_public',
+          select: '_id name email location availability profile_photo is_public',
           match: { is_public: true }
         }).populate({
           path: 'skill_id',
@@ -86,10 +83,10 @@ router.get('/browse', async (req, res) => {
     const usersWithSkills = await Promise.all(
       filteredUsers.map(async (user) => {
         const [offeredSkills, wantedSkills] = await Promise.all([
-          UserSkillOffered.find({ user_id: user._id })
+          UserOfferedSkill.find({ user_id: user._id })
             .populate('skill_id')
             .lean(),
-          UserSkillWanted.find({ user_id: user._id })
+          UserWantedSkill.find({ user_id: user._id })
             .populate('skill_id')
             .lean()
         ]);
@@ -98,15 +95,15 @@ router.get('/browse', async (req, res) => {
           ...user,
           offeredSkills: offeredSkills.map(item => ({
             id: item._id,
-            name: item.skill_id.name,
-            category: item.skill_id.category,
+            name: item.skill_id?.name || 'Unknown Skill',
+            category: item.skill_id?.category || 'Unknown',
             description: item.description,
             proficiency_level: item.proficiency_level
           })),
           wantedSkills: wantedSkills.map(item => ({
             id: item._id,
-            name: item.skill_id.name,
-            category: item.skill_id.category,
+            name: item.skill_id?.name || 'Unknown Skill',
+            category: item.skill_id?.category || 'Unknown',
             description: item.description,
             priority_level: item.priority_level
           }))
@@ -132,10 +129,10 @@ router.get('/browse', async (req, res) => {
 router.get('/me/skills', auth, async (req, res) => {
   try {
     const [offeredSkills, wantedSkills] = await Promise.all([
-      UserSkillOffered.find({ user_id: req.user.id })
+      UserOfferedSkill.find({ user_id: req.user.id })
         .populate('skill_id')
         .lean(),
-      UserSkillWanted.find({ user_id: req.user.id })
+      UserWantedSkill.find({ user_id: req.user.id })
         .populate('skill_id')
         .lean()
     ]);
@@ -143,15 +140,15 @@ router.get('/me/skills', auth, async (req, res) => {
     res.json({
       offeredSkills: offeredSkills.map(item => ({
         id: item._id,
-        name: item.skill_id.name,
-        category: item.skill_id.category,
+        name: item.skill_id?.name || 'Unknown Skill',
+        category: item.skill_id?.category || 'Unknown',
         description: item.description,
         proficiency_level: item.proficiency_level
       })),
       wantedSkills: wantedSkills.map(item => ({
         id: item._id,
-        name: item.skill_id.name,
-        category: item.skill_id.category,
+        name: item.skill_id?.name || 'Unknown Skill',
+        category: item.skill_id?.category || 'Unknown',
         description: item.description,
         priority_level: item.priority_level
       }))
@@ -174,7 +171,7 @@ router.post('/me/skills/offered', auth, async (req, res) => {
     }
 
     // Check if user already has this offered skill
-    const existingSkill = await UserSkillOffered.findOne({
+    const existingSkill = await UserOfferedSkill.findOne({
       user_id: req.user.id,
       skill_id: skillId
     });
@@ -183,7 +180,7 @@ router.post('/me/skills/offered', auth, async (req, res) => {
       return res.status(400).json({ message: 'You already have this skill listed as offered' });
     }
 
-    const userOfferedSkill = new UserSkillOffered({
+    const userOfferedSkill = new UserOfferedSkill({
       user_id: req.user.id,
       skill_id: skillId,
       description: description || '',
@@ -211,7 +208,7 @@ router.post('/me/skills/wanted', auth, async (req, res) => {
     }
 
     // Check if user already has this wanted skill
-    const existingSkill = await UserSkillWanted.findOne({
+    const existingSkill = await UserWantedSkill.findOne({
       user_id: req.user.id,
       skill_id: skillId
     });
@@ -220,7 +217,7 @@ router.post('/me/skills/wanted', auth, async (req, res) => {
       return res.status(400).json({ message: 'You already have this skill listed as wanted' });
     }
 
-    const userWantedSkill = new UserSkillWanted({
+    const userWantedSkill = new UserWantedSkill({
       user_id: req.user.id,
       skill_id: skillId,
       description: description || '',
@@ -241,7 +238,7 @@ router.delete('/me/skills/offered/:skillId', auth, async (req, res) => {
   try {
     const { skillId } = req.params;
 
-    const result = await UserSkillOffered.findOneAndDelete({
+    const result = await UserOfferedSkill.findOneAndDelete({
       _id: skillId,
       user_id: req.user.id
     });
@@ -262,7 +259,7 @@ router.delete('/me/skills/wanted/:skillId', auth, async (req, res) => {
   try {
     const { skillId } = req.params;
 
-    const result = await UserSkillWanted.findOneAndDelete({
+    const result = await UserWantedSkill.findOneAndDelete({
       _id: skillId,
       user_id: req.user.id
     });
@@ -281,6 +278,11 @@ router.delete('/me/skills/wanted/:skillId', auth, async (req, res) => {
 // Get user profile by ID (public) - This must come AFTER all /me routes
 router.get('/:userId', async (req, res) => {
   try {
+    // Validate userId parameter
+    if (!req.params.userId || req.params.userId === 'undefined' || req.params.userId === 'unknown') {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
     const user = await User.findById(req.params.userId).select('-password');
     if (!user || !user.is_public) {
       return res.status(404).json({ message: 'User not found' });
@@ -288,10 +290,10 @@ router.get('/:userId', async (req, res) => {
 
     // Get user's skills
     const [offeredSkills, wantedSkills] = await Promise.all([
-      UserSkillOffered.find({ user_id: user._id })
+      UserOfferedSkill.find({ user_id: user._id })
         .populate('skill_id')
         .lean(),
-      UserSkillWanted.find({ user_id: user._id })
+      UserWantedSkill.find({ user_id: user._id })
         .populate('skill_id')
         .lean()
     ]);
@@ -300,15 +302,15 @@ router.get('/:userId', async (req, res) => {
       ...user.toObject(),
       offeredSkills: offeredSkills.map(item => ({
         id: item._id,
-        name: item.skill_id.name,
-        category: item.skill_id.category,
+        name: item.skill_id?.name || 'Unknown Skill',
+        category: item.skill_id?.category || 'Unknown',
         description: item.description,
         proficiency_level: item.proficiency_level
       })),
       wantedSkills: wantedSkills.map(item => ({
         id: item._id,
-        name: item.skill_id.name,
-        category: item.skill_id.category,
+        name: item.skill_id?.name || 'Unknown Skill',
+        category: item.skill_id?.category || 'Unknown',
         description: item.description,
         priority_level: item.priority_level
       }))

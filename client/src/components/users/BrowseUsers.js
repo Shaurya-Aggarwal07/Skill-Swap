@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Calendar, Star, Users, BookOpen, Target } from 'lucide-react';
+import { Search, MapPin, Calendar, Star, Users } from 'lucide-react';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -9,63 +9,7 @@ import Footer from '../common/Footer';
 import axios from 'axios';
 import Navbar from '../common/Navbar';
 
-// Dummy users data
-const DUMMY_USERS = [
-  {
-    id: 1,
-    name: 'Marc Demo',
-    profile_photo: '',
-    location: 'New York',
-    availability: 'Weekends',
-    is_public: true,
-    rating: 3.9,
-    offeredSkills: [
-      { id: 1, name: 'JavaScript' },
-      { id: 2, name: 'Python' },
-    ],
-    wantedSkills: [
-      { id: 3, name: 'Photoshop' },
-      { id: 4, name: 'Graphic Designer' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Michell',
-    profile_photo: '',
-    location: 'London',
-    availability: 'Evenings',
-    is_public: true,
-    rating: 2.5,
-    offeredSkills: [
-      { id: 5, name: 'Node.js' },
-      { id: 6, name: 'React' },
-    ],
-    wantedSkills: [
-      { id: 7, name: 'Photoshop' },
-      { id: 8, name: 'Graphic Designer' },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Joe Wills',
-    profile_photo: '',
-    location: 'Berlin',
-    availability: 'Weekdays',
-    is_public: true,
-    rating: 4.0,
-    offeredSkills: [
-      { id: 9, name: 'Excel' },
-      { id: 10, name: 'PowerPoint' },
-    ],
-    wantedSkills: [
-      { id: 11, name: 'Photoshop' },
-      { id: 12, name: 'Graphic Designer' },
-    ],
-  },
-  // Add more dummy users as needed
-];
 
-const USERS_PER_PAGE = 2;
 
 const BrowseUsers = () => {
   const { isAuthenticated } = useAuth();
@@ -78,41 +22,7 @@ const BrowseUsers = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  useEffect(() => {
-    // For development, use dummy data until API is ready
-    setLoading(true);
-    
-    // Filter dummy users based on search criteria
-    const filteredUsers = DUMMY_USERS.filter(user => {
-      const matchesSearch = searchTerm === '' || 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.location && user.location.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesSkill = skillFilter === '' || 
-        user.offeredSkills.some(skill => skill.name.toLowerCase().includes(skillFilter.toLowerCase())) ||
-        user.wantedSkills.some(skill => skill.name.toLowerCase().includes(skillFilter.toLowerCase()));
-      
-      const matchesLocation = locationFilter === '' || 
-        (user.location && user.location.toLowerCase().includes(locationFilter.toLowerCase()));
-      
-      return matchesSearch && matchesSkill && matchesLocation;
-    });
-
-    const total = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
-    const start = (currentPage - 1) * USERS_PER_PAGE;
-    const paginatedResults = filteredUsers.slice(start, start + USERS_PER_PAGE);
-
-    setUsers(paginatedResults);
-    setTotalPages(total);
-    setLoading(false);
-    
-    // When ready to use the real API, uncomment this:
-    /*
-    fetchUsers();
-    */
-  }, [currentPage, searchTerm, skillFilter, locationFilter]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -124,14 +34,20 @@ const BrowseUsers = () => {
       });
 
       const response = await axios.get(`/api/users/browse?${params}`);
-      setUsers(response.data.users);
-      setTotalPages(response.data.pagination.pages);
+      setUsers(response.data.users || []);
+      setTotalPages(response.data.pagination?.pages || 1);
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      setUsers([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchTerm, skillFilter, locationFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -148,9 +64,11 @@ const BrowseUsers = () => {
   const handleRequest = (userId) => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
+    } else if (userId && userId !== 'undefined' && userId !== 'unknown') {
+      // Navigate to user profile to request swap
+      window.location.href = `/users/${userId}`;
     } else {
-      // In real app, open swap modal
-      alert('Request swap with user ID: ' + userId);
+      console.error('Invalid user ID:', userId);
     }
   };
 
@@ -220,9 +138,9 @@ const BrowseUsers = () => {
             {/* Users Grid */}
             {users.length > 0 ? (
               <div className="space-y-4">
-                {users.map((user) => (
+                {users.filter(user => user._id || user.id).map((user) => (
                   <div
-                    key={user.id}
+                    key={user._id || user.id}
                     className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-4">
@@ -236,23 +154,23 @@ const BrowseUsers = () => {
                         ) : (
                           <div className="h-16 w-16 rounded-full bg-primary-600 flex items-center justify-center">
                             <span className="text-lg font-bold text-white">
-                              {user.name.charAt(0).toUpperCase()}
+                              {(user.name || 'U').charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">{user.name}</h3>
+                        <h3 className="text-lg font-bold text-gray-900">{user.name || 'Unknown User'}</h3>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-xs text-gray-500">Skills offered:</span>
                           {(user.offeredSkills || []).map((skill) => (
-                            <span key={skill.id} className="badge badge-info">{skill.name}</span>
+                            <span key={skill.id || skill._id} className="badge badge-info">{skill.name || 'Unknown Skill'}</span>
                           ))}
                         </div>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <span className="text-xs text-gray-500">Skill wanted:</span>
                           {(user.wantedSkills || []).map((skill) => (
-                            <span key={skill.id} className="badge badge-warning">{skill.name}</span>
+                            <span key={skill.id || skill._id} className="badge badge-warning">{skill.name || 'Unknown Skill'}</span>
                           ))}
                         </div>
                         {user.location && (
@@ -275,12 +193,12 @@ const BrowseUsers = () => {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Link
-                        to={`/dashboard/users/${user.id}`}
+                        to={`/users/${user._id || user.id || 'unknown'}`}
                         className="text-primary-600 hover:text-primary-700 text-xs font-medium mb-2"
                       >
                         View Profile
                       </Link>
-                      <Button variant="primary" size="sm" onClick={() => handleRequest(user.id)}>
+                      <Button variant="primary" size="sm" onClick={() => handleRequest(user._id || user.id)}>
                         Request
                       </Button>
                     </div>

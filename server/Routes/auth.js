@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { User } = require('../database/init');
 const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -31,27 +31,40 @@ const upload = multer({
   }
 });
 
-// Register user (no validation for testing)
+// Register user
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name, location, availability } = req.body;
 
+    // Basic validation
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
     // Check for duplicate email
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Hash password if provided, else use empty string
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : '';
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user
     const user = await User.create({
-      email: email || '',
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      name: name || '',
-      location: location || '',
-      availability: availability || ''
+      name: name.trim(),
+      location: location ? location.trim() : '',
+      availability: availability ? availability.trim() : ''
     });
 
     const token = jwt.sign(
@@ -77,12 +90,21 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login user (no validation for testing)
+// Login user
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // Basic validation
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -91,11 +113,8 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: 'Your account has been banned' });
     }
 
-    // If password is empty, allow login (for testing), else check password
-    let validPassword = true;
-    if (user.password && password) {
-      validPassword = await bcrypt.compare(password, user.password);
-    }
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -144,16 +163,32 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// Update user profile (no validation for testing)
+// Update user profile
 router.put('/profile', authenticateToken, upload.single('profile_photo'), async (req, res) => {
   try {
     const { name, location, availability, is_public } = req.body;
     const updateData = {};
 
-    if (name !== undefined) updateData.name = name;
-    if (location !== undefined) updateData.location = location;
-    if (availability !== undefined) updateData.availability = availability;
-    if (is_public !== undefined) updateData.is_public = is_public;
+    // Basic validation
+    if (name !== undefined) {
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Name cannot be empty' });
+      }
+      updateData.name = name.trim();
+    }
+    
+    if (location !== undefined) {
+      updateData.location = location ? location.trim() : '';
+    }
+    
+    if (availability !== undefined) {
+      updateData.availability = availability ? availability.trim() : '';
+    }
+    
+    if (is_public !== undefined) {
+      updateData.is_public = Boolean(is_public);
+    }
+    
     if (req.file) {
       updateData.profile_photo = `/uploads/${req.file.filename}`;
     }
@@ -165,7 +200,7 @@ router.put('/profile', authenticateToken, upload.single('profile_photo'), async 
     const user = await User.findByIdAndUpdate(
       req.user.id,
       updateData,
-      { new: true, runValidators: false }
+      { new: true, runValidators: true }
     ).select('-password');
 
     if (!user) {

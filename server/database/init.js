@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 // Import all models to register them with Mongoose
-require('../models/User');
-require('../models/Skill');
-require('../models/UserOfferedSkill');
-require('../models/UserWantedSkill');
-require('../models/SwapRequest');
-require('../models/Rating');
-require('../models/AdminMessage');
+const User = require('../models/User');
+const Skill = require('../models/Skill');
+const UserOfferedSkill = require('../models/UserOfferedSkill');
+const UserWantedSkill = require('../models/UserWantedSkill');
+const SwapRequest = require('../models/SwapRequest');
+const Rating = require('../models/Rating');
+const AdminMessage = require('../models/AdminMessage');
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/skillswap';
@@ -20,14 +20,13 @@ const connectDB = async () => {
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error);
+    console.log('Please make sure MongoDB is running and the connection string is correct');
     process.exit(1);
   }
 };
 
 // Initialize database with default data
 const initializeDatabase = async () => {
-  const User = mongoose.model('User');
-  const Skill = mongoose.model('Skill');
   try {
     // Check if admin user exists
     const adminExists = await User.findOne({ email: 'admin@skillswap.com' });
@@ -78,5 +77,12 @@ const initializeDatabase = async () => {
 
 module.exports = {
   connectDB,
-  initializeDatabase
+  initializeDatabase,
+  User,
+  Skill,
+  UserOfferedSkill,
+  UserWantedSkill,
+  SwapRequest,
+  Rating,
+  AdminMessage
 }; 

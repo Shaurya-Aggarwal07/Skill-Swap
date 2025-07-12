@@ -28,11 +28,15 @@ const SkillsManager = () => {
         axios.get('/api/users/me/skills')
       ]);
 
-      setSkills(skillsRes.data.skills);
-      setUserOfferedSkills(userSkillsRes.data.offeredSkills);
-      setUserWantedSkills(userSkillsRes.data.wantedSkills);
+      setSkills(skillsRes.data.skills || []);
+      setUserOfferedSkills(userSkillsRes.data.offeredSkills || []);
+      setUserWantedSkills(userSkillsRes.data.wantedSkills || []);
     } catch (error) {
       console.error('Failed to fetch skills data:', error);
+      // Set default values if API fails
+      setSkills([]);
+      setUserOfferedSkills([]);
+      setUserWantedSkills([]);
     } finally {
       setLoading(false);
     }

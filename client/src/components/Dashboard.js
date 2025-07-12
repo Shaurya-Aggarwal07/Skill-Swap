@@ -28,9 +28,17 @@ const Dashboard = () => {
         ]);
 
         setStats(statsRes.data.stats);
-        setRecentSwaps(swapsRes.data.requests);
+        setRecentSwaps(swapsRes.data.requests || []);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
+        // Set default values if API fails
+        setStats({
+          totalUsers: 0,
+          totalSwaps: 0,
+          acceptedSwaps: 0,
+          averageRating: 0
+        });
+        setRecentSwaps([]);
       } finally {
         setLoading(false);
       }
@@ -102,40 +110,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Platform Stats */}
-      {stats && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Platform Overview
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.totalUsers}
-              </div>
-              <div className="text-sm text-gray-600">Total Users</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {stats.totalSwaps}
-              </div>
-              <div className="text-sm text-gray-600">Total Swaps</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {stats.acceptedSwaps}
-              </div>
-              <div className="text-sm text-gray-600">Completed Swaps</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {stats.averageRating?.toFixed(1) || '0.0'}
-              </div>
-              <div className="text-sm text-gray-600">Avg Rating</div>
-            </div>
-          </div>
-        </div>
-      )}
+     
 
       {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

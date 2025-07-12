@@ -24,6 +24,12 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!userId || userId === 'undefined' || userId === 'unknown') {
+        setError('Invalid user ID');
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError('');
       try {
@@ -34,6 +40,7 @@ const UserProfile = () => {
           wanted: res.data.user.wantedSkills || [],
         });
       } catch (err) {
+        console.error('Failed to load user profile:', err);
         setError('Failed to load user profile');
       }
       setLoading(false);
@@ -44,7 +51,10 @@ const UserProfile = () => {
   useEffect(() => {
     if (isAuthenticated) {
       axios.get('/api/users/me/skills')
-        .then(res => setMySkills({ offered: res.data.offeredSkills, wanted: res.data.wantedSkills }))
+        .then(res => setMySkills({ 
+          offered: res.data.offeredSkills || [], 
+          wanted: res.data.wantedSkills || [] 
+        }))
         .catch(() => setMySkills({ offered: [], wanted: [] }));
     }
   }, [isAuthenticated]);
@@ -67,11 +77,12 @@ const UserProfile = () => {
     setSwapLoading(true);
     setSwapError('');
     setSwapSuccess('');
+    
     try {
       await axios.post('/api/swaps', {
-        recipientId: Number(userId),
-        offeredSkillId: Number(swapForm.offeredSkillId),
-        requestedSkillId: Number(swapForm.requestedSkillId),
+        recipientId: userId,
+        offeredSkillId: swapForm.offeredSkillId,
+        requestedSkillId: swapForm.requestedSkillId,
         message: swapForm.message,
       });
       setSwapSuccess('Swap request sent!');
@@ -89,7 +100,7 @@ const UserProfile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{profile.name}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{profile.name || 'Unknown User'}</h1>
         <p className="mt-2 text-gray-600">{profile.location} {profile.availability && `| ${profile.availability}`}</p>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -99,16 +110,16 @@ const UserProfile = () => {
               <img src={profile.profile_photo} alt="Profile" className="h-20 w-20 rounded-full object-cover border" />
             ) : (
               <div className="h-20 w-20 rounded-full bg-primary-600 flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">{profile.name?.charAt(0)?.toUpperCase()}</span>
+                <span className="text-2xl font-bold text-white">{(profile.name || 'U')?.charAt(0)?.toUpperCase()}</span>
               </div>
             )}
           </div>
           <div>
             <div className="mb-2">
-              <span className="font-medium">Location: </span>{profile.location}
+              <span className="font-medium">Location: </span>{profile.location || 'Not specified'}
             </div>
             <div className="mb-2">
-              <span className="font-medium">Availability: </span>{profile.availability}
+              <span className="font-medium">Availability: </span>{profile.availability || 'Not specified'}
             </div>
             <div className="mb-2">
               <span className="font-medium">Profile: </span>{profile.is_public ? 'Public' : 'Private'}
@@ -118,10 +129,10 @@ const UserProfile = () => {
             </div>
           </div>
         </div>
-        <div className="mb-4">
+                <div className="mb-4">
           <span className="font-medium">Skills Offered:</span>
           <div className="flex flex-wrap gap-2 mt-1">
-            {skills.offered.length > 0 ? skills.offered.map((skill) => (
+            {(skills.offered || []).length > 0 ? skills.offered.map((skill) => (
               <span key={skill.id} className="badge badge-info">{skill.name}</span>
             )) : <span className="text-gray-500 ml-2">None</span>}
           </div>
@@ -129,12 +140,12 @@ const UserProfile = () => {
         <div className="mb-4">
           <span className="font-medium">Skills Wanted:</span>
           <div className="flex flex-wrap gap-2 mt-1">
-            {skills.wanted.length > 0 ? skills.wanted.map((skill) => (
+            {(skills.wanted || []).length > 0 ? skills.wanted.map((skill) => (
               <span key={skill.id} className="badge badge-warning">{skill.name}</span>
             )) : <span className="text-gray-500 ml-2">None</span>}
-          </div>
         </div>
-        {currentUser && Number(currentUser.id) !== Number(userId) && (
+        </div>
+        {currentUser && currentUser.id !== userId && (
           <Button variant="primary" onClick={handleRequest}>Request</Button>
         )}
       </div>
@@ -169,7 +180,7 @@ const UserProfile = () => {
                   required
                 >
                   <option value="">Select a skill</option>
-                  {mySkills.offered.map((skill) => (
+                  {(mySkills.offered || []).map((skill) => (
                     <option key={skill.id} value={skill.id}>{skill.name}</option>
                   ))}
                 </select>
@@ -184,7 +195,7 @@ const UserProfile = () => {
                   required
                 >
                   <option value="">Select a skill</option>
-                  {skills.offered.map((skill) => (
+                  {(skills.offered || []).map((skill) => (
                     <option key={skill.id} value={skill.id}>{skill.name}</option>
                   ))}
                 </select>

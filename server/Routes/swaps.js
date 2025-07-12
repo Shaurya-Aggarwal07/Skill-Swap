@@ -1,18 +1,15 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticateToken, checkNotBanned } = require('../middleware/auth');
-const SwapRequest = require('../models/SwapRequest');
-const User = require('../models/User');
-const UserSkillOffered = require('../models/UserOfferedSkill');
-const Rating = require('../models/Rating');
+const { SwapRequest, User, UserOfferedSkill, Rating } = require('../database/init');
 
 const router = express.Router();
 
 // Create a new swap request
 router.post('/', authenticateToken, checkNotBanned, [
   body('recipientId').isMongoId(),
-  body('offeredSkillId').isMongoId(),
-  body('requestedSkillId').isMongoId(),
+  body('offeredSkillId').isMongoId(), // This is now a UserOfferedSkill ID
+  body('requestedSkillId').isMongoId(), // This is now a UserOfferedSkill ID
   body('message').optional().trim()
 ], async (req, res) => {
   try {
@@ -39,22 +36,16 @@ router.post('/', authenticateToken, checkNotBanned, [
     }
 
     // Check if requester has the offered skill
-    const offeredSkill = await UserSkillOffered.findOne({
-      user_id: requesterId,
-      skill_id: offeredSkillId
-    });
+    const offeredSkill = await UserOfferedSkill.findById(offeredSkillId);
 
-    if (!offeredSkill) {
+    if (!offeredSkill || offeredSkill.user_id.toString() !== requesterId) {
       return res.status(400).json({ error: 'You do not have the offered skill' });
     }
 
     // Check if recipient has the requested skill
-    const requestedSkill = await UserSkillOffered.findOne({
-      user_id: recipientId,
-      skill_id: requestedSkillId
-    });
+    const requestedSkill = await UserOfferedSkill.findById(requestedSkillId);
 
-    if (!requestedSkill) {
+    if (!requestedSkill || requestedSkill.user_id.toString() !== recipientId) {
       return res.status(400).json({ error: 'Recipient does not have the requested skill' });
     }
 
@@ -73,8 +64,8 @@ router.post('/', authenticateToken, checkNotBanned, [
     const swapRequest = await SwapRequest.create({
       requester_id: requesterId,
       recipient_id: recipientId,
-      offered_skill_id: offeredSkillId,
-      requested_skill_id: requestedSkillId,
+      offered_skill_id: offeredSkill.skill_id, // Store the actual Skill ID
+      requested_skill_id: requestedSkill.skill_id, // Store the actual Skill ID
       message
     });
 
@@ -132,8 +123,8 @@ router.get('/my-requests', authenticateToken, checkNotBanned, async (req, res) =
       message: req.message,
       created_at: req.created_at,
       updated_at: req.updated_at,
-      requester_id: req.requester_id._id,
-      recipient_id: req.recipient_id._id,
+      requester_id: req.requester_id._id.toString(),
+      recipient_id: req.recipient_id._id.toString(),
       requester_name: req.requester_id.name,
       recipient_name: req.recipient_id.name,
       offered_skill_name: req.offered_skill_id.name,

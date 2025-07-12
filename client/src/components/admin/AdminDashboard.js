@@ -42,10 +42,19 @@ const AdminDashboard = () => {
       ]);
 
       setStats(statsRes.data.stats);
-      setRecentUsers(usersRes.data.users);
-      setRecentSwaps(swapsRes.data.swaps);
+      setRecentUsers(usersRes.data.users || []);
+      setRecentSwaps(swapsRes.data.swaps || []);
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
+      // Set default values if API fails
+      setStats({
+        totalUsers: 0,
+        totalSwaps: 0,
+        acceptedSwaps: 0,
+        averageRating: 0
+      });
+      setRecentUsers([]);
+      setRecentSwaps([]);
     } finally {
       setLoading(false);
     }
