@@ -75,8 +75,12 @@ A comprehensive web application that enables users to list their skills and requ
 
 3. **Start the application**
    ```bash
-   # Start both backend and frontend
+   # Start frontend
    npm run dev
+   
+   # Start backend
+   cd server
+   npm run server
    ```
 
    Or use the provided scripts:
@@ -85,8 +89,8 @@ A comprehensive web application that enables users to list their skills and requ
 
 4. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
-   - Health Check: http://localhost:5000/api/health
+   - Backend API: http://localhost:5001
+   - Health Check: http://localhost:5001/api/health
 
 ### Default Admin Account
 - **Email**: admin@skillswap.com
@@ -132,25 +136,19 @@ skill-swap-platform/
 ### Available Scripts
 
 ```bash
-# Install all dependencies
-npm run install-all
-
-# Start development servers (backend + frontend)
-npm run dev
-
-# Start backend only
-npm run server
-
-
 ### Environment Variables
 
 Create a `.env` file in the root directory:
-
-```env
 NODE_ENV=development
-PORT=5000
+PORT=5001
 JWT_SECRET=confidential
 MONGODB_URI=confidential
+
+Create a `.env` file in server folder:
+PORT=5001
+JWT_SECRET=confidential
+MONGODB_URI=confidential
+
 ```
 
 ## Security Features
