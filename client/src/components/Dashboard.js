@@ -5,39 +5,23 @@ import axios from 'axios';
 import {
   Users,
   MessageSquare,
-  Star,
-  TrendingUp,
   Plus,
   Search,
 } from 'lucide-react';
-import Button from './common/Button';
 import LoadingSpinner from './common/LoadingSpinner';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState(null);
   const [recentSwaps, setRecentSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [statsRes, swapsRes] = await Promise.all([
-          axios.get('/api/admin/stats'),
-          axios.get('/api/swaps/my-requests?limit=5')
-        ]);
-
-        setStats(statsRes.data.stats);
+        const swapsRes = await axios.get('/api/swaps/my-requests?limit=10');
         setRecentSwaps(swapsRes.data.requests || []);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        // Set default values if API fails
-        setStats({
-          totalUsers: 0,
-          totalSwaps: 0,
-          acceptedSwaps: 0,
-          averageRating: 0
-        });
         setRecentSwaps([]);
       } finally {
         setLoading(false);
@@ -115,7 +99,7 @@ const Dashboard = () => {
       {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-medium text-gray-900 mb-4">
-          Recent Swap Requests
+          Recent Activity - Latest Swap Requests ({recentSwaps.length})
         </h2>
         {recentSwaps.length > 0 ? (
           <div className="space-y-4">
@@ -127,7 +111,7 @@ const Dashboard = () => {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-sm font-medium text-gray-900">
-                      {swap.requester_id === user.id
+                      {swap.requester_id === user.id || swap.requester_id === user._id
                         ? `You → ${swap.recipient_name}`
                         : `${swap.requester_name} → You`}
                     </span>
@@ -145,6 +129,9 @@ const Dashboard = () => {
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {swap.offered_skill_name} ↔ {swap.requested_skill_name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {new Date(swap.created_at).toLocaleDateString()} at {new Date(swap.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </div>
                 </div>
                 <Link
@@ -166,6 +153,18 @@ const Dashboard = () => {
             >
               <Search className="h-4 w-4 mr-1" />
               Browse users to get started
+            </Link>
+          </div>
+        )}
+        
+        {recentSwaps.length > 0 && (
+          <div className="mt-4 text-center">
+            <Link
+              to="/swaps"
+              className="inline-flex items-center text-primary-600 hover:text-primary-700 text-sm font-medium"
+            >
+              View All Swap Requests
+              <MessageSquare className="h-4 w-4 ml-1" />
             </Link>
           </div>
         )}
