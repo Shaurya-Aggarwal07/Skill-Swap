@@ -89,8 +89,8 @@ A comprehensive web application that enables users to list their skills and requ
 
 4. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
-   - Health Check: http://localhost:5000/api/health
+   - Backend API: http://localhost:5001
+   - Health Check: http://localhost:5001/api/health
 
 ### Default Admin Account
 - **Email**: admin@skillswap.com
