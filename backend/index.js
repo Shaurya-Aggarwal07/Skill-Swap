@@ -86,7 +86,8 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized successfully');
     
-    const server = app.listen(PORT, () => {
+    const PORT = process.env.PORT || 5001;
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/api/health`);
     }).on('error', (err) => {
@@ -103,10 +104,5 @@ async function startServer() {
     process.exit(1);
   }
 }
-
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 startServer();
