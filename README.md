@@ -75,17 +75,10 @@ A comprehensive web application that enables users to list their skills and requ
 
 3. **Start the application**
    ```bash
-   # Start frontend
+   # Start frontend & backend both
    npm run dev
    
-   # Start backend
-   cd server
-   npm run server
    ```
-
-   Or use the provided scripts:
-   - Windows: `start.bat`
-   - Unix/Linux: `./start.sh`
 
 4. **Access the application**
    - Frontend: http://localhost:3000
@@ -95,7 +88,6 @@ A comprehensive web application that enables users to list their skills and requ
 ### Default Admin Account
 - **Email**: admin@skillswap.com
 - **Password**: admin123
-
 
 ## Database Schema
 
