@@ -17,17 +17,16 @@ const { connectDB, initializeDatabase } = require('./database/init');
 
 const app = express();
 app.set('trust proxy', 1); // Fix for express-rate-limit and proxy issues
-const PORT = process.env.PORT || 5001;
 
 // Security middleware
 app.use(helmet());
 
-// CORS middleware
+// CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://yourdomain.com'] 
-    : ['http://localhost:3000'],
-  credentials: true
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Rate limiting
@@ -105,4 +104,9 @@ async function startServer() {
   }
 }
 
-startServer(); 
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+startServer();
