@@ -21,6 +21,7 @@ app.set('trust proxy', 1); // Fix for express-rate-limit and proxy issues
 // Security middleware
 app.use(helmet());
 
+
 // CORS configuration
 app.use(cors({
   origin: process.env.CORS_ORIGIN,
