@@ -1,11 +1,3 @@
-Odoo Hackathon
-Problem Statement: Skill Swap Platform
-
-Team Members:
-- Shaurya Aggarwal
-- Abhinav Srivastava
-- Parul Shrivastava
-
 # Skill Swap Platform
 
 A comprehensive web application that enables users to list their skills and request others in return. Built with React, Node.js, Express, and MongoDB.
